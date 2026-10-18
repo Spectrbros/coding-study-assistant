@@ -34,6 +34,17 @@ jobs:
         run: npm run build
 
       - name: Package and publish
-        run: npx electron-builder --win --x64 --publish always
+        shell: pwsh
+        run: |
+          npx electron-builder --win --x64 --publish always 2>&1 | Tee-Object -FilePath build.log
+          if ($LASTEXITCODE -ne 0) {
+            $interesting = Select-String -Path build.log -Pattern '⨯|error|HttpError|cannot|failed|ENOENT|403|404' | Select-Object -Last 8
+            foreach ($line in $interesting) {
+              $message = $line.Line.Trim()
+              if ($message.Length -gt 350) { $message = $message.Substring(0, 350) }
+              Write-Output "::error title=electron-builder::$message"
+            }
+            exit 1
+          }
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
