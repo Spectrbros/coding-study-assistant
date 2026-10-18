@@ -1,145 +1,79 @@
-# Coding Study Assistant
+<h1 align="center">Coding Study Assistant</h1>
 
-Локальный Windows-ассистент для учебных проектов по программированию на базе DeepSeek API.
-Electron + React + TypeScript + SQLite. Приложение читает папку проекта только на чтение,
-хранит историю и настройки локально, а в DeepSeek отправляет только те фрагменты,
-которые пользователь явно подтвердил.
+<p align="center">Учебный ИИ-помощник по программированию для Windows</p>
 
-## Скачать
+<p align="center">
+  <a href="https://github.com/Spectrbros/coding-study-assistant/releases/latest"><img alt="Последний релиз" src="https://img.shields.io/github/v/release/Spectrbros/coding-study-assistant?label=release&color=2f81f7"></a>
+  <img alt="Платформа" src="https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-0078D6">
+  <a href="https://github.com/Spectrbros/coding-study-assistant/releases"><img alt="Скачивания" src="https://img.shields.io/github/downloads/Spectrbros/coding-study-assistant/total?label=downloads"></a>
+  <a href="https://github.com/Spectrbros/coding-study-assistant/actions/workflows/release.yml"><img alt="Сборка" src="https://github.com/Spectrbros/coding-study-assistant/actions/workflows/release.yml/badge.svg"></a>
+</p>
 
-Готовые сборки для Windows x64 публикуются в разделе
-[Releases](https://github.com/Spectrbros/coding-study-assistant/releases/latest):
+---
 
-- `Coding-Study-Assistant-<version>-x64.exe` — установщик NSIS;
-- `Coding-Study-Assistant-<version>-portable.exe` — portable-версия без установки.
+**Coding Study Assistant** помогает разобраться в собственном учебном проекте: объясняет код, ищет причины ошибок, подсказывает, что осталось сделать по заданию, и готовит к защите работы.
 
-API-ключ DeepSeek в сборку не входит: его нужно указать в «Настройках» при первом запуске.
+Приложение читает папку проекта **только на чтение**, хранит историю и настройки на вашем компьютере и отправляет в DeepSeek только те фрагменты кода, которые вы явно подтвердили.
 
-## Возможности
+## 🚀 Установка
 
-- Проекты с привязкой к локальной папке (без изменения исходников).
-- Чаты с историей, режимами помощи: обычный, объяснить, ошибка, реализовать, защита.
-- Поиск по контексту проекта, предпросмотр фрагментов, ручное добавление файлов,
-  проверка актуальности (SHA-256) перед отправкой.
-- Требования проекта и чек-лист: ручные пункты, предложение и оценка через ИИ.
-- Безопасные проверочные команды (npm, pytest, Maven, Gradle, .NET, CMake),
-  запускаемые в копии проекта во временной папке.
-- Вложения: текст, PDF, DOCX, изображения (с учётом лимитов).
-- Русский и английский интерфейс, тёмная и светлая тема.
-- API-ключ DeepSeek хранится только в зашифрованном виде через `safeStorage` (DPAPI).
+1. Откройте [Releases](https://github.com/Spectrbros/coding-study-assistant/releases/latest) и скачайте один из файлов:
+   - `Coding-Study-Assistant-…-x64.exe` — обычный установщик;
+   - `Coding-Study-Assistant-…-portable.exe` — версия без установки.
+2. Получите API-ключ DeepSeek на [platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys). Обратите внимание: запросы к API платные.
+3. Запустите приложение, откройте **Настройки**, вставьте ключ и нажмите **«Проверить и сохранить»**.
 
-## Безопасность
+> **Windows показывает предупреждение?** Файлы не подписаны платным сертификатом, поэтому SmartScreen может их заблокировать. Нажмите **«Подробнее» → «Выполнить в любом случае»**.
 
-- `contextIsolation: true`, `sandbox: true`, `nodeIntegration: false`.
-- Renderer не имеет сетевого доступа: production CSP запрещает `connect-src`.
-  Запросы к DeepSeek выполняются только в main-процессе.
-- Все IPC-каналы типизированы и валидируются схемами Zod; ответы проверяются
-  на принадлежность отправителю (sender guard).
-- Пути к файлам проверяются на выход за пределы папки проекта; открыть через
-  `system.openPath` можно только каталог данных приложения.
-- Проверочные команды формируются только приложением из фиксированного списка,
-  запускаются без административных прав в копии проекта.
-- Изоляция запусков — **по копии**, а не полноценная песочница: команда имеет
-  доступ к учётной записи и сети. Изменение исходников во время запуска
-  обнаруживается по отпечатку и показывается в интерфейсе.
+> **Ключ не входит в сборку** — без него приложение не отвечает на вопросы. Также нужен доступ к интернету.
 
-## Стек
+## ✨ Что умеет
 
-- Electron 44, electron-vite 6, React 19, TypeScript 7.
-- better-sqlite3 (WAL, миграции), Zod.
-- react-markdown + highlight.js, lucide-react, CSS Modules.
-- Vitest + Testing Library.
+- **Пять режимов помощи** — Обычный, Объяснить, Ошибка, Реализовать, Защита. Режим меняет стиль ответа под вашу задачу.
+- **Контекст под вашим контролем** — найдите нужные файлы, посмотрите фрагменты и отправьте только выбранное.
+- **Требования и чек-лист** — вставьте текст задания, а приложение предложит пункты и оценит, что уже сделано.
+- **Проверки в один клик** — тесты и сборка запускаются в копии проекта, исходные файлы остаются нетронутыми.
+- **Вложения** — текстовые файлы, PDF, DOCX и изображения можно приложить к вопросу.
+- **История чатов** по каждому проекту и отдельные чаты без проекта.
+- **Русский и английский интерфейс**, тёмная и светлая тема.
 
-## Структура
+## 🧭 Как это работает
 
-```
-src/main       main-процесс: окно, безопасность, IPC, SQLite, DeepSeek, запуски
-src/preload    узкий типизированный мост window.api
-src/renderer   React-интерфейс, состояние, i18n, стили
-src/shared     общие типы, каналы IPC, схемы, ошибки
-tests          unit-тесты сервисов и UI-примитивов
-```
+1. **Создайте проект** и укажите папку с учебным кодом — приложение только читает её.
+2. **Добавьте требования** из задания: по ним строятся ответы и чек-лист.
+3. **Выберите контекст** — что именно отправить модели, с предпросмотром.
+4. **Задайте вопрос** в подходящем режиме и получите объяснение, план или разбор ошибки.
 
-## Запуск для разработки
+## 🔒 Приватность
 
-Требуется Node.js >= 22.12.0 и npm.
+- Папка проекта не изменяется: приложение не пишет, не переименовывает и не удаляет ваши файлы.
+- История, настройки и требования хранятся локально, в базе на вашем компьютере.
+- API-ключ шифруется средствами Windows и никогда не попадает в текст запроса.
+- Сеть используется только для обращений к DeepSeek — и только с теми фрагментами, которые вы подтвердили.
 
-При `npm install` скрипт `postinstall` скачивает бинарник Electron (~110 МБ)
-в `node_modules/electron/dist`; без него не запустятся `npm run dev`
-и `npm run package:win`.
+## 🛠 Для разработчиков
+
+Нужен Node.js 22.12 или новее.
 
 ```powershell
 npm install
-npm run dev
+npm run dev          # запуск приложения
+npm test             # unit-тесты
+npm run package:win  # установщик и portable в release/
 ```
 
-Если Node/npm не установлены глобально, можно использовать портативный Node:
-
-```powershell
-$node = "$PWD\.tools\node-v24.22.0-win-x64"
-$env:PATH = "$node;$env:PATH"
-& "$node\npm.cmd" install
-& "$node\npm.cmd" run dev
-```
-
-При первом запуске откройте «Настройки», вставьте API-ключ DeepSeek и сохраните его.
-Ключ проверяется запросом списка моделей и шифруется средствами ОС.
-
-## Скрипты
-
-| Команда | Назначение |
-| --- | --- |
-| `npm run dev` | Запуск приложения в режиме разработки |
-| `npm run typecheck` | Проверка типов main/preload и renderer |
-| `npm test` | Unit-тесты Vitest |
-| `npm run build` | Сборка main/preload/renderer в `out/` |
-| `npm run package:dir` | Непакованная Windows-сборка в `release/win-unpacked` |
-| `npm run package:win` | NSIS-установщик и portable `.exe` в `release/` |
-
-Локальная проверка без глобального Node:
-
-```powershell
-$node = "$PWD\.tools\node-v24.22.0-win-x64\node.exe"
-& $node .\node_modules\vitest\vitest.mjs run
-& $node .\node_modules\typescript\bin\tsc -p tsconfig.node.json --noEmit
-& $node .\node_modules\typescript\bin\tsc -p tsconfig.web.json --noEmit
-```
-
-## Сборка Windows-релиза
-
-```powershell
-npm run package:win
-```
-
-Результат: `release/Coding-Study-Assistant-<version>-x64.exe` (установщик NSIS)
-и `release/Coding-Study-Assistant-<version>-portable.exe` (portable). Нативные
-модули (`better-sqlite3`) распаковываются из asar автоматически.
-
-## Публикация релиза
-
-Релизы собираются автоматически: workflow `.github/workflows/release.yml`
-запускается на push тега `v*` в GitHub Actions (windows-latest), прогоняет
-typecheck и тесты, собирает `out/`, упаковывает NSIS-установщик и portable-сборку
-и загружает их в GitHub Releases через `gh release upload`.
-
-```powershell
-npm version patch        # или minor / major — обновит version, коммит и тег
-git push --follow-tags   # запушит коммит и тег, стартует сборка релиза
-```
-
-Версию в теге и `package.json` нужно держать одинаковой: `npm version`
-делает это автоматически.
-
-## Данные приложения
-
-База SQLite, настройки и временные копии проектов находятся в
-`app.getPath('userData')` (обычно `%APPDATA%\Coding Study Assistant`).
-Каталог можно открыть из окна «Настройки» → «Открыть папку данных».
-Удаление проекта в приложении не удаляет исходную папку с кодом.
+Релизы собираются автоматически в GitHub Actions: `npm version patch` и `git push --follow-tags` создают тег, по которому CI прогоняет тесты, собирает оба `.exe` и публикует [релиз](https://github.com/Spectrbros/coding-study-assistant/releases).
 
 ## Ограничения
 
-- Для ответов ИИ нужен действующий ключ DeepSeek и доступ к сети.
-- Приложение не является песочницей и не гарантирует безопасность
-  произвольных команд проекта — запускайте проверки осознанно.
-- Поддерживается Windows x64; другие платформы не тестировались.
+- Нужен действующий ключ DeepSeek и доступ к сети.
+- Проверки проекта выполняются в копии папки, но это не полноценная песочница — запускайте их осознанно.
+- Поддерживается Windows 10/11 x64; другие платформы не тестировались.
+
+---
+
+<p align="center">
+  <a href="https://github.com/Spectrbros/coding-study-assistant/releases">Скачать</a> ·
+  <a href="https://github.com/Spectrbros/coding-study-assistant/issues">Сообщить о проблеме</a> ·
+  <a href="https://github.com/Spectrbros/coding-study-assistant/actions">Сборки</a>
+</p>
