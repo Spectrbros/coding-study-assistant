@@ -86,7 +86,7 @@ export function buildChatMessages(input: PromptBuildInput): ChatMessagePayload[]
   }
 
   if (request.sources.length > 0) {
-    const title = lang === 'en' ? 'PROJECT CONTEXT (read-only excerpts)' : 'КОНТЕКСТ ПРОЕКТА (фрагменты, только чтение)'
+    const title = lang === 'en' ? 'PROJECT CONTEXT (read-only)' : 'КОНТЕКСТ ПРОЕКТА (только чтение)'
     const body = request.sources.map((source) => formatSource(source, request.language)).join('\n\n')
     messages.push({ role: 'system', content: `## ${title}\n${body}` })
   }

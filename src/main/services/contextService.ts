@@ -1,7 +1,14 @@
 import { createHash } from 'node:crypto'
 import { readdirSync, readFileSync, statSync, type Dirent, type Stats } from 'node:fs'
 import { join, relative, sep } from 'node:path'
-import type { ContextBuildResult, ContextCandidate, ContextSource, ContextStaleEntry, Project } from '@shared/types'
+import type {
+  ContextBuildMode,
+  ContextBuildResult,
+  ContextCandidate,
+  ContextSource,
+  ContextStaleEntry,
+  Project
+} from '@shared/types'
 import { estimateTokens } from './prompts'
 import type { FileService } from './fileService'
 
@@ -16,7 +23,8 @@ const ALWAYS_SKIP_FILES = new Set(['package-lock.json', 'yarn.lock', 'pnpm-lock.
 const MAX_SCAN_FILES = 6000
 const MAX_FILE_BYTES = 256 * 1024
 const MAX_TOTAL_READ_BYTES = 24 * 1024 * 1024
-const MAX_SOURCES = 12
+const MAX_SEARCH_SOURCES = 12
+const MAX_PROJECT_SOURCES = MAX_SCAN_FILES
 const MAX_CACHE_ENTRIES = 300
 const WINDOW_RADIUS = 12
 
@@ -147,20 +155,28 @@ export class ContextService {
 
   async build(options: {
     project: Project
+    mode: ContextBuildMode
     query: string
     excludePatterns: string[]
     maxContextChars: number
     manualPaths: string[]
   }): Promise<ContextBuildResult> {
     const exclusions = options.excludePatterns.map(wildcardToRegExp)
-    const tokens = tokenizeQuery(options.query)
+    const tokens = options.mode === 'search' ? tokenizeQuery(options.query) : []
+    const sourceLimit = options.mode === 'all' ? MAX_PROJECT_SOURCES : MAX_SEARCH_SOURCES
     const candidates: ContextCandidate[] = []
     let scannedFiles = 0
     let skippedFiles = 0
     let totalReadBytes = 0
+    let scanLimited = false
 
     const walk = (directory: string, depth: number): void => {
-      if (scannedFiles >= MAX_SCAN_FILES || depth > 12) {
+      if (scannedFiles >= MAX_SCAN_FILES) {
+        scanLimited = true
+        return
+      }
+      if (depth > 12) {
+        scanLimited = true
         return
       }
       let entries: Dirent[]
@@ -172,6 +188,7 @@ export class ContextService {
 
       for (const entry of entries) {
         if (scannedFiles >= MAX_SCAN_FILES || totalReadBytes > MAX_TOTAL_READ_BYTES) {
+          scanLimited = true
           return
         }
         const name = entry.name
@@ -211,17 +228,27 @@ export class ContextService {
         totalReadBytes += stats.size
 
         const relativePath = relative(options.project.rootPath, absolutePath).split(sep).join('/')
-        const score = this.scoreFile(relativePath, loaded.text, tokens)
-        if (score <= 0 && tokens.length > 0) {
+        const score = options.mode === 'search' ? this.scoreFile(relativePath, loaded.text, tokens) : 0
+        if (options.mode === 'search' && score <= 0 && tokens.length > 0) {
           continue
         }
 
-        const window = this.bestWindow(loaded.lines, tokens)
+        const window =
+          options.mode === 'all'
+            ? {
+                content: loaded.lines.join('\n'),
+                startLine: 1,
+                endLine: Math.max(1, loaded.lines.length)
+              }
+            : this.bestWindow(loaded.lines, tokens)
         candidates.push({
           reason: score > 0 ? `совпадения в файле: ${score}` : 'файл по имени',
           source: {
-            id: `file:${relativePath}:${window.startLine}-${window.endLine}`,
-            kind: 'search',
+            id:
+              options.mode === 'all'
+                ? `project:${relativePath}`
+                : `file:${relativePath}:${window.startLine}-${window.endLine}`,
+            kind: options.mode === 'all' ? 'project' : 'search',
             label: relativePath,
             path: relativePath,
             startLine: window.startLine,
@@ -237,22 +264,34 @@ export class ContextService {
 
     walk(options.project.rootPath, 0)
 
-    const manualCandidates = await this.readManualSources(options.project, options.manualPaths)
-    const manualPathSet = new Set(manualCandidates.map((candidate) => candidate.source.path))
+    const manualPaths = this.normalizeManualPaths(options.manualPaths)
+    const manualCandidates = await this.readManualSources(options.project, manualPaths)
+    const manualPathSet = new Set(
+      manualCandidates
+        .map((candidate) => candidate.source.path?.toLowerCase())
+        .filter((path): path is string => path !== undefined)
+    )
     const merged = [
       ...manualCandidates,
       ...candidates
-        .filter((candidate) => !manualPathSet.has(candidate.source.path))
-        .sort((left, right) => (right.source.score ?? 0) - (left.source.score ?? 0))
+        .filter((candidate) => {
+          const path = candidate.source.path
+          return path === null || !manualPathSet.has(path.toLowerCase())
+        })
+        .sort((left, right) =>
+          options.mode === 'all'
+            ? (left.source.path ?? '').localeCompare(right.source.path ?? '', 'ru')
+            : (right.source.score ?? 0) - (left.source.score ?? 0)
+        )
     ]
 
     const selected: ContextCandidate[] = []
     let usedChars = 0
-    let truncated = false
+    let truncated = scanLimited
 
     for (const candidate of merged) {
       const length = candidate.source.content.length
-      if (selected.length >= MAX_SOURCES || usedChars + length > options.maxContextChars) {
+      if (selected.length >= sourceLimit || usedChars + length > options.maxContextChars) {
         truncated = true
         continue
       }
@@ -260,11 +299,11 @@ export class ContextService {
       usedChars += length
     }
 
-    const missingManual = options.manualPaths.length - manualCandidates.length
+    const missingManual = manualPaths.length - manualCandidates.length
     let notice: string | null = null
     if (missingManual > 0) {
       notice = 'Часть добавленных вручную файлов не удалось прочитать.'
-    } else if (tokens.length === 0) {
+    } else if (options.mode === 'search' && tokens.length === 0) {
       notice = 'Поисковый запрос пуст: показаны первые подходящие файлы. Проверьте выбор перед отправкой.'
     }
 
@@ -278,13 +317,47 @@ export class ContextService {
     }
   }
 
+  private normalizeManualPaths(manualPaths: string[]): string[] {
+    const result: string[] = []
+    const seenPaths = new Set<string>()
+    for (const requestedPath of manualPaths.slice(0, 20)) {
+      const path = requestedPath
+        .trim()
+        .replace(/\\/g, '/')
+        .replace(/\/{2,}/g, '/')
+        .replace(/^\.\//, '')
+      if (path.length === 0) {
+        continue
+      }
+      const dedupKey = path.toLowerCase()
+      if (seenPaths.has(dedupKey)) {
+        continue
+      }
+      seenPaths.add(dedupKey)
+      result.push(path)
+    }
+    return result
+  }
+
   private async readManualSources(project: Project, manualPaths: string[]): Promise<ContextCandidate[]> {
     const result: ContextCandidate[] = []
-    for (const path of manualPaths.slice(0, 20)) {
+    for (const path of manualPaths) {
       try {
         const read = await this.files.readText(project.rootPath, path)
-        const content = read.text.slice(0, 32_000)
-        const lines = read.text.split(/\r\n|\r|\n/)
+        const normalized = read.text.replace(/\r\n?/g, '\n')
+        const lines: string[] = []
+        let usedChars = 0
+        for (const line of normalized.split('\n')) {
+          if (usedChars + line.length + 1 > 32_000) {
+            break
+          }
+          lines.push(line)
+          usedChars += line.length + 1
+        }
+        if (lines.length === 0) {
+          lines.push(normalized.slice(0, 32_000))
+        }
+        const content = lines.join('\n')
         result.push({
           reason: 'добавлено вручную',
           source: {

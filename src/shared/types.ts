@@ -12,7 +12,11 @@ export type MessageRole = 'user' | 'assistant' | 'system'
 
 export type MessageStatus = 'complete' | 'streaming' | 'cancelled' | 'error'
 
-export type SourceKind = 'search' | 'manual' | 'attachment'
+export type SourceKind = 'search' | 'manual' | 'attachment' | 'project'
+
+export type ContextBuildMode = 'all' | 'search'
+
+export type ContextSelectionMode = 'all' | 'custom' | 'search'
 
 export const HELP_MODES: HelpMode[] = ['normal', 'explain', 'debug', 'implement', 'defense']
 

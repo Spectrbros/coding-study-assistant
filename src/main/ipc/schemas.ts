@@ -85,11 +85,13 @@ export const chatUpdateSchema = z
 export const chatListSchema = z.object({ projectId: id.nullable() }).strict()
 export const chatIdSchema = z.object({ chatId: id }).strict()
 
+const CONTEXT_MAX_SOURCES = 6000
+
 const contextSourceSchema = z
   .object({
-    id: z.string().min(1).max(120),
-    kind: z.enum(['search', 'manual', 'attachment']),
-    label: z.string().max(400),
+    id: z.string().min(1).max(8192),
+    kind: z.enum(['search', 'manual', 'attachment', 'project']),
+    label: z.string().max(4096),
     path: z.string().max(4096).nullable(),
     startLine: z.number().int().min(1).nullable(),
     endLine: z.number().int().min(1).nullable(),
@@ -103,6 +105,7 @@ const contextSourceSchema = z
 export const contextBuildSchema = z
   .object({
     projectId: id,
+    mode: z.enum(['all', 'search']),
     query: z.string().max(20_000),
     includeRequirement: z.boolean(),
     manualPaths: z.array(z.string().max(4096)).max(50)
@@ -110,7 +113,7 @@ export const contextBuildSchema = z
   .strict()
 
 export const contextRevalidateSchema = z
-  .object({ projectId: id, sources: z.array(contextSourceSchema).max(64) })
+  .object({ projectId: id, sources: z.array(contextSourceSchema).max(CONTEXT_MAX_SOURCES) })
   .strict()
 
 export const checklistCreateSchema = z
@@ -161,7 +164,7 @@ export const aiSendSchema = z
     reasoningEffort: z.enum(['low', 'high', 'max']),
     language: z.enum(['ru', 'en']),
     requirementText: z.string().max(200_000).nullable(),
-    sources: z.array(contextSourceSchema).max(24),
+    sources: z.array(contextSourceSchema).max(CONTEXT_MAX_SOURCES),
     attachments: z.array(attachmentSchema).max(10)
   })
   .strict()

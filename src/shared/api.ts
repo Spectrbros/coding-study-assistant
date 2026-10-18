@@ -9,6 +9,7 @@ import type {
   ChecklistItem,
   ChecklistStatus,
   ConnectionCheckResult,
+  ContextBuildMode,
   ContextBuildResult,
   ContextSource,
   ContextStaleEntry,
@@ -97,6 +98,7 @@ export interface RequirementEvaluation {
 
 export interface BuildContextInput {
   projectId: string
+  mode: ContextBuildMode
   query: string
   includeRequirement: boolean
   manualPaths: string[]

@@ -10,7 +10,7 @@ interface ComposerProps {
   streaming: boolean
   attachments: Array<{ fileName: string; kind: AttachmentKind }>
   attachBusy: boolean
-  contextCount: number
+  contextSummary: string
   requirementIncluded: boolean
   sendKey: 'enter' | 'ctrl-enter'
   onAttach: () => void
@@ -25,7 +25,7 @@ export function Composer({
   streaming,
   attachments,
   attachBusy,
-  contextCount,
+  contextSummary,
   requirementIncluded,
   sendKey,
   onAttach,
@@ -80,10 +80,10 @@ export function Composer({
       ) : null}
 
       <div className={styles.composerRow}>
-        <IconButton label={t('attachments.add')} onClick={onAttach} disabled={attachBusy || streaming}>
+        <IconButton label={t('attachments.add')} onClick={onAttach} disabled={attachBusy || disabled}>
           {attachBusy ? <Spinner /> : <Paperclip size={16} />}
         </IconButton>
-        <IconButton label={t('chat.contextButton')} onClick={onOpenContext} disabled={streaming}>
+        <IconButton label={t('chat.contextButton')} onClick={onOpenContext} disabled={disabled}>
           <SlidersHorizontal size={16} />
         </IconButton>
         <textarea
@@ -122,9 +122,8 @@ export function Composer({
 
       <div className={styles.composerHint}>
         <span>
-          {contextCount > 0
-            ? `${t('context.found', { count: contextCount })}${requirementIncluded ? ' · ' + t('context.requirementIncluded') : ''}`
-            : t('context.emptyBody')}
+          {contextSummary}
+          {requirementIncluded ? ` · ${t('context.requirementIncluded')}` : ''}
         </span>
         <span>{sendKey === 'enter' ? t('settings.sendKey.enter') : t('settings.sendKey.ctrlEnter')}</span>
       </div>

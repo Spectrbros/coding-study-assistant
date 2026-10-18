@@ -189,8 +189,8 @@ export class AiService {
     const selected: AiSendRequest['sources'] = []
     let used = 0
     for (const source of request.sources) {
-      if (used + source.content.length > budget || selected.length >= 16) {
-        break
+      if (used + source.content.length > budget) {
+        continue
       }
       selected.push(source)
       used += source.content.length

@@ -18,6 +18,7 @@ export function registerMediaHandlers(registry: IpcRegistry, context: AppContext
     const settings = context.settings.read()
     return context.contextSearch.build({
       project,
+      mode: input.mode,
       query: input.query,
       excludePatterns: settings.searchExcludePatterns,
       maxContextChars: settings.maxContextChars,

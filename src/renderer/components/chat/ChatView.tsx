@@ -5,9 +5,16 @@ import { useI18n, type TranslationKey } from '../../i18n/I18nProvider'
 import { IconButton, Select } from '../ui/ui'
 import { Composer } from './Composer'
 import { MessageList } from './MessageList'
-import { ContextModal } from '../context/ContextModal'
+import { ContextModal, type ContextApplyPayload } from '../context/ContextModal'
 import styles from './chat.module.css'
-import { HELP_MODES, type AttachmentResult, type ContextSource, type HelpMode, type KeyStatus } from '@shared/types'
+import {
+  HELP_MODES,
+  type AttachmentResult,
+  type ContextSelectionMode,
+  type ContextSource,
+  type HelpMode,
+  type KeyStatus
+} from '@shared/types'
 import { errorToMessage } from '../../utils/errorText'
 
 interface PendingAttachment {
@@ -16,6 +23,14 @@ interface PendingAttachment {
   sizeBytes: number
   text: string | null
   dataUrl: string | null
+}
+
+interface ProjectContextConfig {
+  mode: ContextSelectionMode
+  query: string
+  sources: ContextSource[]
+  autoSearch: boolean
+  includeRequirement: boolean
 }
 
 export function ChatView({ onOpenSettings }: { onOpenSettings: () => void }): React.JSX.Element {
@@ -29,7 +44,6 @@ export function ChatView({ onOpenSettings }: { onOpenSettings: () => void }): Re
     stream,
     sendMessage,
     cancelStream,
-    createChat,
     clearMessages,
     requirements,
     models,
@@ -39,11 +53,11 @@ export function ChatView({ onOpenSettings }: { onOpenSettings: () => void }): Re
   const [mode, setMode] = useState<HelpMode>(activeChat?.helpMode ?? 'normal')
   const [attachments, setAttachments] = useState<PendingAttachment[]>([])
   const [contextOpen, setContextOpen] = useState(false)
-  const [pendingText, setPendingText] = useState<string | null>(null)
+  const [contexts, setContexts] = useState<Record<string, ProjectContextConfig>>({})
   const [keyStatus, setKeyStatus] = useState<KeyStatus | null>(null)
-  const [contextCount, setContextCount] = useState(0)
-  const [requirementIncluded, setRequirementIncluded] = useState(false)
   const [attachBusy, setAttachBusy] = useState(false)
+  const [preparingContext, setPreparingContext] = useState(false)
+  const sendInFlightRef = useRef(false)
   const endRef = useRef<HTMLDivElement | null>(null)
 
   const modelId = settings.selectedModel ?? models?.models[0]?.id ?? ''
@@ -113,6 +127,17 @@ export function ChatView({ onOpenSettings }: { onOpenSettings: () => void }): Re
     }
   }
 
+  const loadAllSources = async (projectId: string, includeRequirement: boolean): Promise<ContextSource[]> => {
+    const result = await window.api.context.build({
+      projectId,
+      mode: 'all',
+      query: '',
+      includeRequirement,
+      manualPaths: []
+    })
+    return result.candidates.map((candidate) => candidate.source)
+  }
+
   const performSend = async (text: string, sources: ContextSource[], includeRequirement: boolean): Promise<void> => {
     await sendMessage({
       text,
@@ -130,12 +155,10 @@ export function ChatView({ onOpenSettings }: { onOpenSettings: () => void }): Re
       requirementText: includeRequirement ? requirements?.content ?? null : null
     })
     setAttachments([])
-    setContextCount(sources.length)
-    setRequirementIncluded(includeRequirement)
   }
 
   const handleSend = async (text: string): Promise<void> => {
-    if (stream) {
+    if (stream || preparingContext || sendInFlightRef.current) {
       return
     }
     if (!hasKey) {
@@ -146,16 +169,83 @@ export function ChatView({ onOpenSettings }: { onOpenSettings: () => void }): Re
       pushToast(t('chat.noModelBanner'), 'error')
       return
     }
-    if (!activeChat) {
-      await createChat({ helpMode: mode })
+
+    sendInFlightRef.current = true
+    try {
+      if (!activeProject) {
+        await performSend(text, [], false)
+        return
+      }
+
+      const projectId = activeProject.id
+      const saved = contexts[projectId]
+      const requirementAvailable = Boolean(requirements?.content)
+      const includeRequirement = requirementAvailable && (saved?.includeRequirement ?? true)
+      setPreparingContext(true)
+
+      if (saved?.autoSearch) {
+        const result = await window.api.context.build({
+          projectId,
+          mode: 'search',
+          query: text,
+          includeRequirement,
+          manualPaths: []
+        })
+        if (result.candidates.length === 0) {
+          pushToast(t('context.autoSearchEmpty'), 'info')
+        }
+        setPreparingContext(false)
+        await performSend(
+          text,
+          result.candidates.map((candidate) => candidate.source),
+          includeRequirement
+        )
+        return
+      }
+
+      if (!saved || saved.mode === 'all') {
+        const sources = await loadAllSources(projectId, includeRequirement)
+        setContexts((current) => ({
+          ...current,
+          [projectId]: {
+            mode: 'all',
+            query: '',
+            sources,
+            autoSearch: saved?.autoSearch ?? false,
+            includeRequirement
+          }
+        }))
+        setPreparingContext(false)
+        await performSend(text, sources, includeRequirement)
+        return
+      }
+
+      setPreparingContext(false)
+      await performSend(text, saved.sources, includeRequirement)
+    } catch (sendError) {
+      pushToast(errorToMessage(t, sendError), 'error')
+    } finally {
+      sendInFlightRef.current = false
+      setPreparingContext(false)
     }
-    if (activeProject) {
-      setPendingText(text)
-      setContextOpen(true)
-      return
-    }
-    await performSend(text, [], false)
   }
+
+  const activeContext = activeProject ? contexts[activeProject.id] : undefined
+  const requirementAvailable = Boolean(requirements?.content)
+  const requirementIncluded =
+    activeProject && requirementAvailable ? activeContext?.includeRequirement ?? true : false
+  const contextSummary = !activeProject
+    ? t('context.emptyBody')
+    : activeContext?.autoSearch
+      ? t('context.autoSearchOn')
+      : !activeContext || activeContext.mode === 'all'
+        ? t('context.allFiles')
+        : activeContext.mode === 'search'
+          ? t('context.searchSummary', {
+              query: activeContext.query || t('context.searchPlaceholder'),
+              count: activeContext.sources.length
+            })
+          : t('context.selectedFiles', { count: activeContext.sources.length })
 
   const modeLabel = (item: HelpMode): string => t(`modes.${item}` as TranslationKey)
   const modeHint = (item: HelpMode): string => t(`modes.${item}.hint` as TranslationKey)
@@ -251,7 +341,7 @@ export function ChatView({ onOpenSettings }: { onOpenSettings: () => void }): Re
       </div>
 
       <Composer
-        disabled={Boolean(stream)}
+        disabled={Boolean(stream) || preparingContext}
         streaming={Boolean(stream)}
         attachments={attachments.map((attachment) => ({ fileName: attachment.fileName, kind: attachment.kind }))}
         onAttach={() => void attachFiles()}
@@ -264,10 +354,9 @@ export function ChatView({ onOpenSettings }: { onOpenSettings: () => void }): Re
             pushToast(t('context.emptyBody'), 'info')
             return
           }
-          setPendingText(null)
           setContextOpen(true)
         }}
-        contextCount={contextCount}
+        contextSummary={preparingContext ? t('context.preparing') : contextSummary}
         requirementIncluded={requirementIncluded}
         sendKey={settings.sendKey}
       />
@@ -276,21 +365,27 @@ export function ChatView({ onOpenSettings }: { onOpenSettings: () => void }): Re
         <ContextModal
           open={contextOpen}
           projectId={activeProject.id}
-          query={pendingText ?? ''}
+          initialMode={activeContext?.mode ?? 'all'}
+          initialQuery={activeContext?.query ?? ''}
+          initialSources={activeContext?.sources ?? []}
+          initialAutoSearch={activeContext?.autoSearch ?? false}
+          initialIncludeRequirement={
+            Boolean(requirements?.content) && (activeContext?.includeRequirement ?? true)
+          }
           requirementText={requirements?.content ?? null}
-          onClose={() => {
+          onClose={() => setContextOpen(false)}
+          onApply={(payload: ContextApplyPayload) => {
+            setContexts((current) => ({
+              ...current,
+              [activeProject.id]: {
+                mode: payload.mode,
+                query: payload.query,
+                sources: payload.sources,
+                autoSearch: payload.autoSearch,
+                includeRequirement: payload.includeRequirement
+              }
+            }))
             setContextOpen(false)
-            setPendingText(null)
-          }}
-          onConfirm={(sources, includeRequirement) => {
-            setContextOpen(false)
-            if (pendingText && pendingText.trim().length > 0) {
-              void performSend(pendingText, sources, includeRequirement)
-            } else {
-              setContextCount(sources.length)
-              setRequirementIncluded(includeRequirement)
-            }
-            setPendingText(null)
           }}
         />
       ) : null}
