@@ -111,6 +111,21 @@ npm run package:win
 и `release/Coding-Study-Assistant-<version>-portable.exe` (portable). Нативные
 модули (`better-sqlite3`) распаковываются из asar автоматически.
 
+## Публикация релиза
+
+Релизы собираются автоматически: workflow `.github/workflows/release.yml`
+запускается на push тега `v*` в GitHub Actions (windows-latest), прогоняет
+typecheck и тесты, затем публикует сборки в GitHub Releases через
+`electron-builder --publish always`.
+
+```powershell
+npm version patch        # или minor / major — обновит version, коммит и тег
+git push --follow-tags   # запушит коммит и тег, стартует сборка релиза
+```
+
+Версию в теге и `package.json` нужно держать одинаковой: `npm version`
+делает это автоматически.
+
 ## Данные приложения
 
 База SQLite, настройки и временные копии проектов находятся в

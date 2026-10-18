@@ -37,6 +37,14 @@
       "node_modules/better-sqlite3/**/*"
     ],
     "artifactName": "Coding-Study-Assistant-${version}-${arch}.${ext}",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Spectrbros",
+        "repo": "coding-study-assistant",
+        "releaseType": "release"
+      }
+    ],
     "win": {
       "target": [
         {
