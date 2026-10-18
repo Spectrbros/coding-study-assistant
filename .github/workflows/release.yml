@@ -53,12 +53,16 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           $tag = $env:GITHUB_REF_NAME
+          $version = $tag.TrimStart('v')
           gh release view $tag --json tagName --jq .tagName *> $null
           if ($LASTEXITCODE -ne 0) {
-            gh release create $tag --verify-tag --title "Coding Study Assistant $($tag.TrimStart('v'))" --generate-notes
+            gh release create $tag --verify-tag --title "Coding Study Assistant $version"
             if ($LASTEXITCODE -ne 0) { Write-Output '::error title=gh::release create failed'; exit 1 }
           }
-          $assets = Get-ChildItem release -File | Where-Object { $_.Extension -in '.exe', '.blockmap' } | ForEach-Object { $_.FullName }
+          $notes = "Сборки для Windows x64.`n`n- Coding-Study-Assistant-$version-x64.exe — установщик (NSIS)`n- Coding-Study-Assistant-$version-portable.exe — portable-версия без установки`n`nAPI-ключ DeepSeek в сборку не входит: укажите его в «Настройках» при первом запуске."
+          gh release edit $tag --title "Coding Study Assistant $version" --notes $notes
+          if ($LASTEXITCODE -ne 0) { Write-Output '::error title=gh::release edit failed'; exit 1 }
+          $assets = Get-ChildItem release -File | Where-Object { $_.Extension -in '.exe', '.blockmap', '.yml' } | ForEach-Object { $_.FullName }
           Write-Output "uploading to $tag`: $($assets.Count) file(s)"
           gh release upload $tag $assets --clobber
           if ($LASTEXITCODE -ne 0) { Write-Output '::error title=gh::release upload failed'; exit 1 }
