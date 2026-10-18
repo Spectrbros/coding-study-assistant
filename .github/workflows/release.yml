@@ -54,16 +54,31 @@ jobs:
         run: |
           $tag = $env:GITHUB_REF_NAME
           $version = $tag.TrimStart('v')
-          gh release view $tag --json tagName --jq .tagName *> $null
-          if ($LASTEXITCODE -ne 0) {
-            gh release create $tag --verify-tag --title "Coding Study Assistant $version"
-            if ($LASTEXITCODE -ne 0) { Write-Output '::error title=gh::release create failed'; exit 1 }
-          }
+          $repo = $env:GITHUB_REPOSITORY
+          $title = "Coding Study Assistant $version"
           $notes = "Сборки для Windows x64.`n`n- Coding-Study-Assistant-$version-x64.exe — установщик (NSIS)`n- Coding-Study-Assistant-$version-portable.exe — portable-версия без установки`n`nAPI-ключ DeepSeek в сборку не входит: укажите его в «Настройках» при первом запуске."
-          gh release edit $tag --title "Coding Study Assistant $version" --notes $notes --draft=false
-          if ($LASTEXITCODE -ne 0) { Write-Output '::error title=gh::release edit failed'; exit 1 }
+
+          $release = gh api "repos/$repo/releases/tags/$tag" 2>$null | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or -not $release) {
+            $release = gh api -X POST "repos/$repo/releases" -f tag_name=$tag -f name=$title -f body=$notes | ConvertFrom-Json
+            if ($LASTEXITCODE -ne 0 -or -not $release) { Write-Output '::error title=gh::release create failed'; exit 1 }
+            Write-Output "created release $tag (id $($release.id))"
+          } else {
+            gh api -X PATCH "repos/$repo/releases/$($release.id)" -F draft=false -f name=$title -f body=$notes *> $null
+            if ($LASTEXITCODE -ne 0) { Write-Output '::error title=gh::release publish failed'; exit 1 }
+            Write-Output "published release $tag (id $($release.id))"
+          }
+
           $assets = Get-ChildItem release -File | Where-Object { $_.Extension -eq '.exe' -or $_.Extension -eq '.blockmap' -or $_.Name -eq 'latest.yml' } | ForEach-Object { $_.FullName }
-          Write-Output "uploading to $tag`: $($assets.Count) file(s)"
+          Write-Output "uploading $($assets.Count) file(s) to $tag"
           gh release upload $tag $assets --clobber
           if ($LASTEXITCODE -ne 0) { Write-Output '::error title=gh::release upload failed'; exit 1 }
-          gh release delete-asset $tag builder-debug.yml --yes *> $null
+
+          $current = gh api "repos/$repo/releases/tags/$tag" 2>$null | ConvertFrom-Json
+          foreach ($stale in $current.assets | Where-Object { $_.name -eq 'builder-debug.yml' }) {
+            gh api -X DELETE "repos/$repo/releases/assets/$($stale.id)" *> $null
+            Write-Output "removed stale asset $($stale.name)"
+          }
+
+          Write-Output "release $tag is published: $((($current.assets | Where-Object { $_.name -ne 'builder-debug.yml' }).name) -join ', ')"
+          exit 0
