@@ -7,6 +7,8 @@ import { ChatRepository } from '../db/chatRepository'
 import { MessageRepository } from '../db/messageRepository'
 import { ChecklistRepository } from '../db/checklistRepository'
 import { FileService } from './fileService'
+import { ContextService } from './contextService'
+import { AttachmentService } from './attachmentService'
 
 export class AppContext {
   readonly settings: SettingsRepository
@@ -16,6 +18,8 @@ export class AppContext {
   readonly messages: MessageRepository
   readonly checklist: ChecklistRepository
   readonly files: FileService
+  readonly contextSearch: ContextService
+  readonly attachments: AttachmentService
 
   constructor(
     readonly db: DatabaseSync,
@@ -28,6 +32,8 @@ export class AppContext {
     this.messages = new MessageRepository(db)
     this.checklist = new ChecklistRepository(db)
     this.files = new FileService()
+    this.contextSearch = new ContextService(this.files)
+    this.attachments = new AttachmentService()
   }
 
   get tempDirectory(): string {

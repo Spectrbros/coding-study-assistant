@@ -104,9 +104,6 @@ const api: AppApi = {
     cancel: (runId: string) => invoke<boolean>(IPC.runsCancel, { runId }),
     onEvent: (listener) =>
       subscribe<{ runId: string; chunk: string; stream: 'stdout' | 'stderr' }>(IPC.runsEvent, listener)
-  },
-  modelsInfo: {
-    getCached: () => invoke(IPC.modelsList, { cachedOnly: true, silent: true })
   }
 }
 

@@ -14,7 +14,6 @@ import type {
   ContextStaleEntry,
   HelpMode,
   KeyStatus,
-  ModelInfo,
   ModelsResult,
   Project,
   ProjectEvent,
@@ -181,8 +180,5 @@ export interface AppApi {
     execute(prompt: RunPrompt): Promise<RunResult>
     cancel(runId: string): Promise<boolean>
     onEvent(listener: (event: { runId: string; chunk: string; stream: 'stdout' | 'stderr' }) => void): () => void
-  }
-  modelsInfo: {
-    getCached(): Promise<ModelInfo[]>
   }
 }

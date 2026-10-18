@@ -16,7 +16,11 @@ export class IpcRegistry {
     this.guard = guard
   }
 
-  handle<TIn, TOut>(channel: string, schema: ZodType<TIn>, handler: (input: TIn) => Promise<TOut> | TOut): void {
+  handle<TIn, TOut>(
+    channel: string,
+    schema: ZodType<TIn>,
+    handler: (input: TIn, event: IpcMainInvokeEvent) => Promise<TOut> | TOut
+  ): void {
     if (this.channels.has(channel)) {
       throw new Error(`IPC channel registered twice: ${channel}`)
     }
@@ -36,7 +40,7 @@ export class IpcRegistry {
       }
 
       try {
-        const data = await handler(parsed.data)
+        const data = await handler(parsed.data, event)
         return ipcOk(data)
       } catch (error) {
         const payloadError = toErrorPayload(error)

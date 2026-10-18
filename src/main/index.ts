@@ -5,13 +5,25 @@ import { IpcRegistry } from './ipc/registry'
 import { createSenderGuard } from './ipc/senderGuard'
 import { registerSystemHandlers } from './ipc/system'
 import { registerDataHandlers } from './ipc/dataHandlers'
+import { registerAiHandlers } from './ipc/aiHandlers'
+import { registerMediaHandlers } from './ipc/mediaHandlers'
+import { registerRunHandlers } from './ipc/runHandlers'
+import { registerChecklistAiHandlers } from './ipc/checklistAiHandlers'
 import { createMainWindow } from './window'
 import { WindowStateStore } from './windowState'
 import { closeDatabase, openDatabase, type DatabaseHandle } from './db/database'
 import { AppContext } from './services/appContext'
+import { SecretStore } from './services/secretStore'
+import { DeepSeekClient } from './services/deepseekClient'
+import { ModelCache } from './services/modelCache'
+import { AiService } from './services/aiService'
+import { ChecklistAiService } from './services/checklistAiService'
+import { RunService } from './services/runService'
 
 let mainWindow: BrowserWindow | null = null
 let databaseHandle: DatabaseHandle | null = null
+let aiService: AiService | null = null
+let runService: RunService | null = null
 
 // Песочница включается до события ready, иначе Electron игнорирует вызов.
 app.enableSandbox()
@@ -66,6 +78,19 @@ function bootstrap(): void {
     }
   })
 
+  const secrets = new SecretStore(userDataPath)
+  const client = new DeepSeekClient()
+  const models = new ModelCache(client)
+  const ai = new AiService(context, secrets, client)
+  aiService = ai
+  registerAiHandlers(registry, { context, secrets, client, models, ai })
+  registerMediaHandlers(registry, context)
+  registerChecklistAiHandlers(registry, new ChecklistAiService(context, secrets, client, models))
+
+  const runs = new RunService(context)
+  runService = runs
+  registerRunHandlers(registry, runs)
+
   const initialSettings = context.settings.read()
   nativeTheme.themeSource = initialSettings.theme
 
@@ -118,6 +143,8 @@ if (!gotSingleInstanceLock) {
   })
 
   app.on('will-quit', () => {
+    aiService?.cancelAll()
+    runService?.cancelAll()
     if (databaseHandle) {
       closeDatabase(databaseHandle)
       databaseHandle = null
