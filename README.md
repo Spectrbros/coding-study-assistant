@@ -5,6 +5,16 @@ Electron + React + TypeScript + SQLite. Приложение читает пап
 хранит историю и настройки локально, а в DeepSeek отправляет только те фрагменты,
 которые пользователь явно подтвердил.
 
+## Скачать
+
+Готовые сборки для Windows x64 публикуются в разделе
+[Releases](https://github.com/Spectrbros/coding-study-assistant/releases/latest):
+
+- `Coding-Study-Assistant-<version>-x64.exe` — установщик NSIS;
+- `Coding-Study-Assistant-<version>-portable.exe` — portable-версия без установки.
+
+API-ключ DeepSeek в сборку не входит: его нужно указать в «Настройках» при первом запуске.
+
 ## Возможности
 
 - Проекты с привязкой к локальной папке (без изменения исходников).
