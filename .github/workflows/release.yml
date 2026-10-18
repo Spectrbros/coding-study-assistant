@@ -33,18 +33,32 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Package and publish
+      - name: Package
         shell: pwsh
         run: |
-          npx electron-builder --win --x64 --publish always 2>&1 | Tee-Object -FilePath build.log
+          npx electron-builder --win --x64 --publish never 2>&1 | Tee-Object -FilePath package.log
           if ($LASTEXITCODE -ne 0) {
-            $interesting = Select-String -Path build.log -Pattern '⨯|error|HttpError|cannot|failed|ENOENT|403|404' | Select-Object -Last 8
-            foreach ($line in $interesting) {
-              $message = $line.Line.Trim()
+            Select-String -Path package.log -Pattern '⨯|error|failed|ENOENT' | Select-Object -Last 8 | ForEach-Object {
+              $message = $_.Line.Trim()
               if ($message.Length -gt 350) { $message = $message.Substring(0, 350) }
               Write-Output "::error title=electron-builder::$message"
             }
             exit 1
           }
+          Get-ChildItem release -File | ForEach-Object { Write-Output "artifact: $($_.Name) $($_.Length) bytes" }
+
+      - name: Publish release assets
+        shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          gh release view $tag --json tagName --jq .tagName *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --verify-tag --title "Coding Study Assistant $($tag.TrimStart('v'))" --generate-notes
+            if ($LASTEXITCODE -ne 0) { Write-Output '::error title=gh::release create failed'; exit 1 }
+          }
+          $assets = Get-ChildItem release -File | Where-Object { $_.Extension -in '.exe', '.blockmap' } | ForEach-Object { $_.FullName }
+          Write-Output "uploading to $tag`: $($assets.Count) file(s)"
+          gh release upload $tag $assets --clobber
+          if ($LASTEXITCODE -ne 0) { Write-Output '::error title=gh::release upload failed'; exit 1 }
