@@ -116,6 +116,7 @@ export interface AppApi {
   system: {
     getInfo(): Promise<AppInfo>
     openExternal(url: string): Promise<boolean>
+    openPath(path: string): Promise<boolean>
     pickDirectory(): Promise<string | null>
     copyText(text: string): Promise<boolean>
   }
@@ -127,6 +128,7 @@ export interface AppApi {
     status(): Promise<KeyStatus>
     verify(key: string): Promise<ConnectionCheckResult>
     save(key: string): Promise<ConnectionCheckResult>
+    clear(): Promise<KeyStatus>
   }
   models: {
     list(forceRefresh: boolean): Promise<ModelsResult>

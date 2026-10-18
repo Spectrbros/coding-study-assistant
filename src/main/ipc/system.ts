@@ -1,5 +1,6 @@
 import { app, clipboard, dialog, shell } from 'electron'
 import { safeStorage } from 'electron'
+import { resolve, sep } from 'node:path'
 import { z } from 'zod'
 import { IPC } from '@shared/channels'
 import { createAppError } from '@shared/errors'
@@ -22,6 +23,19 @@ export function registerSystemHandlers(registry: IpcRegistry): void {
       throw createAppError('validation', 'Ссылка отклонена: разрешены только http(s)-адреса')
     }
     await shell.openExternal(url)
+    return true
+  })
+
+  registry.handle(IPC.systemOpenPath, z.string().min(1).max(4096), async (target) => {
+    const root = resolve(app.getPath('userData'))
+    const resolved = resolve(target)
+    if (resolved !== root && !resolved.startsWith(root + sep)) {
+      throw createAppError('validation', 'Открывать можно только папку данных приложения')
+    }
+    const failure = await shell.openPath(resolved)
+    if (failure) {
+      throw createAppError('file_error', failure)
+    }
     return true
   })
 

@@ -1,0 +1,103 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+}
+
+.sectionTitle {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 220px);
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.rowStack {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.rowLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12.5px;
+  color: var(--text);
+}
+
+.rowHint {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-faint);
+}
+
+.rowControl {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+
+.keyRow {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.keyRow > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.keyMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+}
+
+.about {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+  line-height: 1.5;
+}
+
+.pathValue {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  overflow-wrap: anywhere;
+}
+
+.excludesArea {
+  min-height: 88px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+}
+
+.noteSuccess {
+  font-size: 11.5px;
+  color: var(--success);
+}
+
+.noteError {
+  font-size: 11.5px;
+  color: var(--danger);
+}

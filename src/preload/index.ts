@@ -39,6 +39,7 @@ const api: AppApi = {
   system: {
     getInfo: () => invoke(IPC.systemInfo),
     openExternal: (url: string) => invoke(IPC.systemOpenExternal, url),
+    openPath: (target: string) => invoke(IPC.systemOpenPath, target),
     pickDirectory: () => invoke(IPC.systemPickDirectory),
     copyText: (text: string) => invoke(IPC.systemCopyText, text)
   },
@@ -49,7 +50,8 @@ const api: AppApi = {
   key: {
     status: () => invoke(IPC.keyStatus),
     verify: (key: string) => invoke(IPC.keyVerify, key),
-    save: (key: string) => invoke(IPC.keySave, key)
+    save: (key: string) => invoke(IPC.keySave, key),
+    clear: () => invoke(IPC.keyClear)
   },
   models: {
     list: (forceRefresh: boolean) => invoke(IPC.modelsList, { forceRefresh }),

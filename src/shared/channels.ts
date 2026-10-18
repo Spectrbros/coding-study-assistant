@@ -6,6 +6,7 @@
 export const IPC = {
   systemInfo: 'system:info',
   systemOpenExternal: 'system:open-external',
+  systemOpenPath: 'system:open-path',
   systemPickDirectory: 'system:pick-directory',
   systemPickFiles: 'system:pick-files',
   systemCopyText: 'system:copy-text',
@@ -16,6 +17,7 @@ export const IPC = {
   keyStatus: 'key:status',
   keyVerify: 'key:verify',
   keySave: 'key:save',
+  keyClear: 'key:clear',
 
   modelsList: 'models:list',
 

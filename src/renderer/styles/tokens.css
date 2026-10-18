@@ -1,0 +1,78 @@
+:root {
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --font-sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+  --transition: 140ms ease;
+  --shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.28);
+  --shadow-panel: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0d0f14;
+  --bg-elevated: #141821;
+  --bg-panel: #181d27;
+  --bg-hover: #202736;
+  --bg-active: #263043;
+  --bg-input: #10141c;
+  --border: #252c3a;
+  --border-strong: #323c4e;
+  --text: #e8edf5;
+  --text-soft: #c2ccdb;
+  --text-dim: #8b98ab;
+  --text-faint: #66738a;
+  --accent: #7c8cff;
+  --accent-soft: rgba(124, 140, 255, 0.16);
+  --accent-strong: #9aa6ff;
+  --on-accent: #0b0e15;
+  --success: #48d597;
+  --success-soft: rgba(72, 213, 151, 0.14);
+  --warning: #f0b45c;
+  --warning-soft: rgba(240, 180, 92, 0.14);
+  --danger: #ff7070;
+  --danger-soft: rgba(255, 112, 112, 0.14);
+  --code-bg: #0a0c11;
+  --scrollbar: #2b3444;
+  --overlay: rgba(5, 7, 11, 0.62);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f4f6fb;
+  --bg-elevated: #ffffff;
+  --bg-panel: #ffffff;
+  --bg-hover: #eef1f7;
+  --bg-active: #e4e9f4;
+  --bg-input: #ffffff;
+  --border: #dde3ee;
+  --border-strong: #c6cfdd;
+  --text: #182031;
+  --text-soft: #34405a;
+  --text-dim: #5c6a83;
+  --text-faint: #8794a8;
+  --accent: #4d5cf2;
+  --accent-soft: rgba(77, 92, 242, 0.12);
+  --accent-strong: #3b49d8;
+  --on-accent: #ffffff;
+  --success: #12996a;
+  --success-soft: rgba(18, 153, 106, 0.12);
+  --warning: #b47514;
+  --warning-soft: rgba(180, 117, 20, 0.12);
+  --danger: #d64545;
+  --danger-soft: rgba(214, 69, 69, 0.1);
+  --code-bg: #f2f5fa;
+  --scrollbar: #c9d2e0;
+  --overlay: rgba(20, 26, 38, 0.4);
+  --shadow-soft: 0 12px 32px rgba(31, 45, 71, 0.12);
+}

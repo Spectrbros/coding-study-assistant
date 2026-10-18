@@ -20,6 +20,11 @@ export interface AiHandlerDeps {
 export function registerAiHandlers(registry: IpcRegistry, deps: AiHandlerDeps): void {
   registry.handleVoid(IPC.keyStatus, () => deps.secrets.status())
 
+  registry.handleVoid(IPC.keyClear, () => {
+    deps.secrets.clear()
+    return deps.secrets.status()
+  })
+
   registry.handle(IPC.keyVerify, apiKeySchema, async (key) => {
     try {
       const models = await deps.client.listModels(key.trim())
