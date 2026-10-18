@@ -3,6 +3,8 @@
   "productName": "Coding Study Assistant",
   "version": "0.1.0",
   "private": true,
+  "author": "SpectrBros",
+  "license": "UNLICENSED",
   "description": "Локальный AI-ассистент по программированию на DeepSeek API для учебных проектов",
   "main": "./out/main/index.js",
   "engines": {
@@ -17,6 +19,51 @@
     "test:watch": "vitest",
     "package:dir": "npm run build && electron-builder --win --dir --x64",
     "package:win": "npm run build && electron-builder --win --x64"
+  },
+  "build": {
+    "appId": "com.spectrbros.codingstudy",
+    "productName": "Coding Study Assistant",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "npmRebuild": false,
+    "electronDist": "node_modules/electron/dist",
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**/*"
+    ],
+    "artifactName": "Coding-Study-Assistant-${version}-${arch}.${ext}",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "portable": {
+      "artifactName": "Coding-Study-Assistant-${version}-portable.${ext}"
+    }
   },
   "devDependencies": {
     "@testing-library/jest-dom": "7.0.1",
