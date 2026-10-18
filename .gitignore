@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+
+# Build output
+out/
+dist/
+release/
+build/out/
+
+# Local toolchain (portable Node.js)
+.tools/
+
+# Secrets and environment
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+*.p12
+
+# Local data (databases, logs, artifacts)
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+logs/
+coverage/
+test-results/
+playwright-report/
+
+# Caches
+.cache/
+*.tsbuildinfo
+.vite/
+
+# Editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
