@@ -60,7 +60,7 @@ jobs:
             if ($LASTEXITCODE -ne 0) { Write-Output '::error title=gh::release create failed'; exit 1 }
           }
           $notes = "Сборки для Windows x64.`n`n- Coding-Study-Assistant-$version-x64.exe — установщик (NSIS)`n- Coding-Study-Assistant-$version-portable.exe — portable-версия без установки`n`nAPI-ключ DeepSeek в сборку не входит: укажите его в «Настройках» при первом запуске."
-          gh release edit $tag --title "Coding Study Assistant $version" --notes $notes
+          gh release edit $tag --title "Coding Study Assistant $version" --notes $notes --draft=false
           if ($LASTEXITCODE -ne 0) { Write-Output '::error title=gh::release edit failed'; exit 1 }
           $assets = Get-ChildItem release -File | Where-Object { $_.Extension -in '.exe', '.blockmap', '.yml' } | ForEach-Object { $_.FullName }
           Write-Output "uploading to $tag`: $($assets.Count) file(s)"

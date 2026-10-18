@@ -119,8 +119,8 @@ npm run package:win
 
 Релизы собираются автоматически: workflow `.github/workflows/release.yml`
 запускается на push тега `v*` в GitHub Actions (windows-latest), прогоняет
-typecheck и тесты, затем публикует сборки в GitHub Releases через
-`electron-builder --publish always`.
+typecheck и тесты, собирает `out/`, упаковывает NSIS-установщик и portable-сборку
+и загружает их в GitHub Releases через `gh release upload`.
 
 ```powershell
 npm version patch        # или minor / major — обновит version, коммит и тег
