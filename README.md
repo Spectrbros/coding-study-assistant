@@ -64,6 +64,10 @@ tests          unit-тесты сервисов и UI-примитивов
 
 Требуется Node.js >= 22.12.0 и npm.
 
+При `npm install` скрипт `postinstall` скачивает бинарник Electron (~110 МБ)
+в `node_modules/electron/dist`; без него не запустятся `npm run dev`
+и `npm run package:win`.
+
 ```powershell
 npm install
 npm run dev
